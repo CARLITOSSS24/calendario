@@ -1,17 +1,20 @@
 import bcrypt from 'bcryptjs';
 import { pool } from '../config/data/connectPoSQL.js';
 
-const CAMPOS = 'id, nombres, apellidos, correo, nombre_usuario';
+// Columnas que se devuelven (nunca la contraseña)
+const CAMPOS = 'id_usuario, nombres, apellidos, correo, nombre_usuario, rol';
 const esDuplicado = (error) => error.code === '23505';
 
 export const getUsuarios = async (req, res) => {
-    const { rows } = await pool.query(`SELECT ${CAMPOS} FROM usuarios ORDER BY id`);
+    const { rows } = await pool.query(
+        `SELECT ${CAMPOS} FROM usuarios ORDER BY id_usuario`
+    );
     res.json(rows);
 };
 
 export const getUsuarioById = async (req, res) => {
     const { rows } = await pool.query(
-        `SELECT ${CAMPOS} FROM usuarios WHERE id = $1`,
+        `SELECT ${CAMPOS} FROM usuarios WHERE id_usuario = $1`,
         [req.params.id]
     );
     if (rows.length === 0) {
@@ -25,6 +28,7 @@ export const createUsuario = async (req, res) => {
 
     try {
         const hash = await bcrypt.hash(contrasena, 10);
+        // rol no se recibe del body: la base le asigna 'user' por defecto
         const { rows } = await pool.query(
             `INSERT INTO usuarios (nombres, apellidos, correo, nombre_usuario, contrasena)
              VALUES ($1, $2, $3, $4, $5)
@@ -52,7 +56,7 @@ export const updateUsuario = async (req, res) => {
                 correo         = COALESCE($3, correo),
                 nombre_usuario = COALESCE($4, nombre_usuario),
                 contrasena     = COALESCE($5, contrasena)
-             WHERE id = $6
+             WHERE id_usuario = $6
              RETURNING ${CAMPOS}`,
             [nombres, apellidos, correo, nombre_usuario, hash, req.params.id]
         );
@@ -70,7 +74,7 @@ export const updateUsuario = async (req, res) => {
 
 export const deleteUsuario = async (req, res) => {
     const { rowCount } = await pool.query(
-        'DELETE FROM usuarios WHERE id = $1',
+        'DELETE FROM usuarios WHERE id_usuario = $1',
         [req.params.id]
     );
     if (rowCount === 0) {
