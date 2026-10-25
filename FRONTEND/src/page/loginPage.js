@@ -1,9 +1,8 @@
 import { createLoginForm } from '../form/loginForm.js';
 
-export const renderLoginPage = (container, onLogin) => {
+export const renderLoginPage = (container, { onLogin, onIrARegistro, aviso }) => {
     const main = document.createElement('main');
-    main.className = 'login-page';
-    main.append(createLoginForm(onLogin));
-
+    main.className = 'auth-page';
+    main.append(createLoginForm({ onSuccess: onLogin, onIrARegistro, aviso }));
     container.replaceChildren(main);
 };

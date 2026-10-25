@@ -1,8 +1,8 @@
-import { api } from '../service/api.js';   
+import { login, mensajeDeError } from '../service/authService.js';
 
-export const createLoginForm = (onSuccess) => {
+export const createLoginForm = ({ onSuccess, onIrARegistro, aviso = '' }) => {
     const form = document.createElement('form');
-    form.className = 'login-form';
+    form.className = 'auth-form';
     form.innerHTML = `
         <h2>Iniciar sesión</h2>
 
@@ -16,24 +16,32 @@ export const createLoginForm = (onSuccess) => {
 
         <button type="submit">Entrar</button>
         <p class="mensaje" role="alert"></p>
+        <p class="cambio">¿No tienes cuenta?
+            <button type="button" class="enlace">Regístrate</button>
+        </p>
     `;
 
     const mensaje = form.querySelector('.mensaje');
-    const boton = form.querySelector('button');
+    const boton = form.querySelector('button[type="submit"]');
+
+    if (aviso) {
+        mensaje.textContent = aviso;
+        mensaje.classList.add('ok');
+    }
+
+    form.querySelector('.enlace').addEventListener('click', onIrARegistro);
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         mensaje.textContent = '';
+        mensaje.classList.remove('ok');
         boton.disabled = true;
 
-        const datos = Object.fromEntries(new FormData(form));
-
         try {
-            const { data } = await api.post('/login', datos);
+            const data = await login(Object.fromEntries(new FormData(form)));
             onSuccess(data.usuario);
         } catch (error) {
-            mensaje.textContent =
-                error.response?.data?.mensaje ?? 'No se pudo conectar con el servidor';
+            mensaje.textContent = mensajeDeError(error);
         } finally {
             boton.disabled = false;
         }
